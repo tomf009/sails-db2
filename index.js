@@ -550,6 +550,19 @@ module.exports = (function () {
                         }
                     });
 
+                    // Add any autoIncrement via sequence columns
+                    _.each(collection._attributes, function (columnDefinition, columnName) {
+                        // If this is not autoIncrement, skip
+                        if (!columnDefinition.hasOwnProperty('autoIncrement') || !columnDefinition.autoIncrement) {
+                            return;
+                        }
+                        // If this autoIncrement column has a sequence, include it.
+                        if (columnDefinition.hasOwnProperty('sequence')) {
+                            columns.push(columnName);
+                            questions.push('nextval for ' + columnDefinition.sequence);
+                        }
+                    });
+
                     connection.conn.query('SELECT ' + selectQuery + ' FROM FINAL TABLE (INSERT INTO ' + collection.tableName + ' (' + columns.join(',') + ') VALUES (' + questions.join(',') + '))', params, function (err, results) {
                         me.closeConnection(connection.conn);
                         if (err) cb(err);
